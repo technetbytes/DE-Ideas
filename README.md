@@ -1,2 +1,2 @@
-# DE-Ideas
+# Data Engineering Ideas
 Data Engineering Project &amp; Idea
