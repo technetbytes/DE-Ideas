@@ -1,8 +1,12 @@
+from dotenv import load_dotenv
+import os
 import pandas as pd
 import logging
 
 from sqlalchemy import create_engine
 from datetime import datetime
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -11,8 +15,16 @@ logging.basicConfig(
 
 logging.info("Pipeline started")
 
+
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+DB_HOST = os.getenv("POSTGRES_HOST")
+DB_PORT = os.getenv("POSTGRES_PORT")
+DB_NAME = os.getenv("POSTGRES_DB")
+
 DATABASE_URL = (
-    "postgresql://retail:retail123@localhost:5432/retail_dw"
+    f"postgresql://{DB_USER}:{DB_PASSWORD}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 engine = create_engine(DATABASE_URL)

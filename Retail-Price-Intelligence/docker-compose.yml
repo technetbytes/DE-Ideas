@@ -3,19 +3,21 @@ version: '3.9'
 services:
 
   postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: retail_postgres
 
     environment:
-      POSTGRES_USER: retail
-      POSTGRES_PASSWORD: retail123
-      POSTGRES_DB: retail_dw
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    restart: unless-stopped
 
   metabase:
     image: metabase/metabase
@@ -23,6 +25,48 @@ services:
 
     ports:
       - "3000:3000"
+
+    depends_on:
+      - postgres
+
+    restart: unless-stopped
+
+  airflow:
+    image: apache/airflow:2.9.1
+    container_name: retail_airflow
+
+    depends_on:
+      - postgres
+
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create
+      --username admin
+      --password admin
+      --firstname Admin
+      --lastname User
+      --role Admin
+      --email admin@example.com || true &&
+      airflow webserver
+      "
+
+    restart: unless-stopped
 
 volumes:
   postgres_data:
