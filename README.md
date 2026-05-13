@@ -1,5 +1,5 @@
 # Data Engineering Ideas
-Data Engineering Projects &amp; Idea
+Data Engineering Projects &amp; Ideas
 
 ## Retail-Price-Intelligence
 
