@@ -15,6 +15,59 @@ This project demonstrates an end-to-end Data Engineering pipeline using:
 - Automate ETL using Airflow
 - Create dashboards using Metabase
 
+## Real-World Structure
+
+A mature Airflow project often looks like:
+
+```
+airflow/
+├── dags/
+│   ├── etl/
+│   │   ├── users_etl.py
+│   │   ├── orders_etl.py
+│   │   └── products_etl.py
+│   ├── reporting/
+│   │   ├── monthly_sales_report.py
+│   │   └── churn_analysis.py
+│   ├── sensors/
+│   │   └── external_file_sensor.py
+│   └── main_workflow.py
+│
+├── plugins/
+│   ├── custom_operators/
+│   │   ├── slack_operator.py
+│   │   └── sftp_upload_operator.py
+│   └── hooks/
+│       └── jira_hook.py
+│
+├── tasks/
+│   ├── extract.py
+│   ├── transform.py
+│   └── load.py
+│
+├── sql/
+│   ├── etl_schema.sql
+│   └── views.sql
+│
+├── data/
+│   └── raw/
+│   └── processed/
+│
+├── tests/
+│   ├── test_operators.py
+│   └── test_hooks.py
+│
+├── config/
+│   ├── settings.yaml
+│   └── connections.yaml
+│
+├── scripts/
+│   ├── setup.sh
+│   └── run_etl.py
+│
+└── README.md
+```
+
 ## Setup Instructions
 
 ### Step 1 — Install Dependencies

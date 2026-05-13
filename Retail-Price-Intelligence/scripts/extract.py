@@ -21,7 +21,7 @@ df = pd.DataFrame(data, columns=columns)
 
 os.makedirs("data", exist_ok=True)
 
-df.to_csv("data/raw_products.csv", index=False)
+df.to_csv("/opt/airflow/data/raw_products.csv", index=False)
 
 print("Raw data extracted successfully")
 print(df)

@@ -27,9 +27,10 @@ DATABASE_URL = (
     f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
+print(DATABASE_URL)
 engine = create_engine(DATABASE_URL)
 
-df = pd.read_csv("data/clean_products.csv")
+df = pd.read_csv("/opt/airflow/data/clean_products.csv")
 
 df["scraped_at"] = datetime.now()
 

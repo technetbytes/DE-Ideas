@@ -4,6 +4,8 @@ services:
 
   postgres:
     image: postgres:16
+    env_file:
+      - .env
     container_name: retail_postgres
 
     environment:
@@ -31,8 +33,10 @@ services:
 
     restart: unless-stopped
 
-  airflow:
+  airflow-webserver:
     image: apache/airflow:2.9.1
+    env_file:
+      - .env
     container_name: retail_airflow
 
     depends_on:
@@ -52,6 +56,8 @@ services:
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
+
 
     command: >
       bash -c "
@@ -65,6 +71,32 @@ services:
       --email admin@example.com || true &&
       airflow webserver
       "
+
+    restart: unless-stopped
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.1
+    env_file:
+      - .env
+    container_name: retail_airflow_scheduler
+
+    depends_on:
+      - airflow-webserver
+
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
+
+    command: airflow scheduler
 
     restart: unless-stopped
 

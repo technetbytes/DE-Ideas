@@ -1,0 +1,27 @@
+[2026-05-13T18:54:20.024+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-05-13T18:54:20.069+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: retail_pipeline.extract manual__2026-05-13T18:54:04.805890+00:00 [queued]>
+[2026-05-13T18:54:20.080+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: retail_pipeline.extract manual__2026-05-13T18:54:04.805890+00:00 [queued]>
+[2026-05-13T18:54:20.080+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 1
+[2026-05-13T18:54:20.099+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): extract> on 2026-05-13 18:54:04.805890+00:00
+[2026-05-13T18:54:20.105+0000] {standard_task_runner.py:63} INFO - Started process 55 to run task
+[2026-05-13T18:54:20.109+0000] {standard_task_runner.py:90} INFO - Running: ['airflow', 'tasks', 'run', 'retail_pipeline', 'extract', 'manual__2026-05-13T18:54:04.805890+00:00', '--job-id', '3', '--raw', '--subdir', 'DAGS_FOLDER/retail_etl_dag.py', '--cfg-path', '/tmp/tmpwciyfs4m']
+[2026-05-13T18:54:20.112+0000] {standard_task_runner.py:91} INFO - Job 3: Subtask extract
+[2026-05-13T18:54:20.207+0000] {task_command.py:426} INFO - Running <TaskInstance: retail_pipeline.extract manual__2026-05-13T18:54:04.805890+00:00 [running]> on host ae42a2fea709
+[2026-05-13T18:54:20.339+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='retail_pipeline' AIRFLOW_CTX_TASK_ID='extract' AIRFLOW_CTX_EXECUTION_DATE='2026-05-13T18:54:04.805890+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-05-13T18:54:04.805890+00:00'
+[2026-05-13T18:54:20.341+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-05-13T18:54:20.362+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-05-13T18:54:20.364+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', 'python /opt/airflow/scripts/extract.py']
+[2026-05-13T18:54:20.373+0000] {subprocess.py:86} INFO - Output:
+[2026-05-13T18:54:21.763+0000] {subprocess.py:93} INFO - Raw data extracted successfully
+[2026-05-13T18:54:21.764+0000] {subprocess.py:93} INFO -        store        product_name       brand   category  price
+[2026-05-13T18:54:21.765+0000] {subprocess.py:93} INFO - 0     Imtiaz      Olpers Milk 1L      Olpers      Dairy    320
+[2026-05-13T18:54:21.765+0000] {subprocess.py:93} INFO - 1     Naheed      Olpers Milk 1L      Olpers      Dairy    335
+[2026-05-13T18:54:21.766+0000] {subprocess.py:93} INFO - 2   Chase Up      Surf Excel 1kg  Surf Excel    Laundry    890
+[2026-05-13T18:54:21.766+0000] {subprocess.py:93} INFO - 3  Carrefour  Tapal Danedar 900g       Tapal        Tea   1450
+[2026-05-13T18:54:21.767+0000] {subprocess.py:93} INFO - 4     Imtiaz          Pepsi 1.5L       Pepsi  Beverages    210
+[2026-05-13T18:54:21.851+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-05-13T18:54:21.852+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-05-13T18:54:21.899+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=retail_pipeline, task_id=extract, run_id=manual__2026-05-13T18:54:04.805890+00:00, execution_date=20260513T185404, start_date=20260513T185420, end_date=20260513T185421
+[2026-05-13T18:54:21.939+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 0
+[2026-05-13T18:54:21.985+0000] {taskinstance.py:3498} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-05-13T18:54:21.988+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
