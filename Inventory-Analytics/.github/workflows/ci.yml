@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dag-tests:
+    name: DAG integrity tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install apache-airflow==2.9.1 psycopg2-binary pytest
+
+      - name: Run DAG tests
+        env:
+          AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////tmp/airflow.db
+          AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+          INVENTORY_DB_HOST: localhost
+          INVENTORY_DB_PORT: "5432"
+          INVENTORY_DB_NAME: inventory
+          INVENTORY_DB_USER: inventory
+          INVENTORY_DB_PASSWORD: inventory
+        run: |
+          airflow db init
+          pytest tests/dags/ -v
+
+  lint:
+    name: Python lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint DAGs
+        run: ruff check airflow/dags/

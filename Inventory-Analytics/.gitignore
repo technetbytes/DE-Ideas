@@ -1,0 +1,30 @@
+# files
+*.zip
+*.tar
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Airflow
+airflow/logs/
+airflow/plugins/__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Docker volumes (local dev)
+postgres_data/
+metabase_data/
