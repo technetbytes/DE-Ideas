@@ -65,6 +65,12 @@ inventory-analytics/
 
 ## Quick start
 
+### Airflow DAG
+![Airflow DAG Scripts](diagram/airflow.png)
+
+### Metabase Dashboard
+![High level KPIs design of Metabase Dashboard](diagram/master-control_06.png)
+
 ### Prerequisites
 - Docker Desktop ≥ 4.x (Compose V2)
 - 4 GB RAM available
