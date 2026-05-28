@@ -1,0 +1,156 @@
+# Data Lineage Specification
+# Documents the complete data flow from source to destination
+# Can be used with OpenLineage, DataHub, or custom tooling
+
+apiVersion: lineage/v1.0
+metadata:
+  pipeline: stock-streaming
+  owner: data-engineering
+  last_updated: "2026-05-25"
+
+# ─── Data Sources ────────────────────────────────────────────────────────────
+sources:
+  - id: stock-tick-generator
+    name: "Stock Tick Generator (GBM Simulation)"
+    type: synthetic
+    description: "Generates realistic stock ticks using Geometric Brownian Motion"
+    output_format: json
+    refresh: continuous
+    symbols: 25
+    frequency: "1ms per symbol (round-robin)"
+
+# ─── Processing Stages ───────────────────────────────────────────────────────
+stages:
+  - id: kafka-produce
+    name: "Kafka Producer"
+    type: stream_producer
+    input: stock-tick-generator
+    output: kafka-topic-stock-ticks
+    transformations:
+      - "Serialize to JSON (orjson)"
+      - "LZ4 compression"
+      - "Partition by symbol key"
+    sla:
+      latency_ms: 5
+      throughput: "1000+ msg/s"
+
+  - id: kafka-topic-stock-ticks
+    name: "Kafka Topic: stock-ticks"
+    type: message_queue
+    partitions: 6
+    replication_factor: 1
+    retention: "7 days"
+    compression: lz4
+    consumers:
+      - kafka-consume-postgres
+      - kafka-consume-analytics  # Future
+      - kafka-consume-alerts     # Future
+
+  - id: kafka-consume-postgres
+    name: "Kafka Consumer (PostgreSQL Writer)"
+    type: stream_consumer
+    input: kafka-topic-stock-ticks
+    output: postgres-stock-ticks
+    transformations:
+      - "Deserialize JSON"
+      - "Data contract validation"
+      - "Batch accumulation (500 records or 1s timeout)"
+      - "execute_values bulk insert"
+    sla:
+      latency_ms: 100
+      batch_size: 500
+
+  - id: postgres-stock-ticks
+    name: "PostgreSQL: stock_ticks"
+    type: database_table
+    schema:
+      database: stockdata
+      table: stock_ticks
+      primary_key: "(symbol, timestamp_ms, sequence)"
+    indexes:
+      - "symbol, timestamp DESC"
+      - "timestamp DESC"
+      - "symbol"
+    retention: "7 days (automated cleanup)"
+
+  - id: ohlcv-1s-aggregation
+    name: "OHLCV 1-Second Bars"
+    type: materialized_view
+    input: postgres-stock-ticks
+    output: postgres-stock-ohlcv-1s
+    transformations:
+      - "GROUP BY symbol, date_trunc('second', timestamp)"
+      - "Compute OHLCV (open, high, low, close, volume)"
+      - "Calculate avg_spread, tick_count"
+    refresh: "Every 1 minute (Airflow DAG)"
+
+  - id: ohlcv-1m-aggregation
+    name: "OHLCV 1-Minute Bars"
+    type: materialized_view
+    input: postgres-stock-ticks
+    output: postgres-stock-ohlcv-1m
+    transformations:
+      - "GROUP BY symbol, date_trunc('minute', timestamp)"
+      - "Compute OHLCV + avg_volatility"
+    refresh: "Every 1 minute (Airflow DAG)"
+
+  - id: stock-summary-update
+    name: "Stock Summary (24h Rolling)"
+    type: aggregation_table
+    input: postgres-stock-ticks
+    output: postgres-stock-summary
+    transformations:
+      - "24h rolling window aggregation"
+      - "Upsert per symbol"
+    refresh: "Every 1 minute (Airflow DAG)"
+
+# ─── Data Quality Checkpoints ────────────────────────────────────────────────
+quality_checkpoints:
+  - stage: kafka-produce
+    validator: contract-validator (inline)
+    checks:
+      - "Required fields present"
+      - "Price range validation"
+      - "Bid/Ask crossing detection"
+      - "Timestamp freshness"
+    action_on_failure: "Log + increment violation metric"
+
+  - stage: postgres-stock-ticks
+    validator: "Soda Core"
+    schedule: "Every 5 minutes"
+    checks:
+      - "Freshness < 30s"
+      - "Row count in expected range"
+      - "No nulls in required fields"
+      - "No duplicates"
+      - "All 25 symbols present"
+      - "Price/spread sanity"
+    action_on_failure: "Alert via Alertmanager + Airflow email"
+
+  - stage: ohlcv-1s-aggregation
+    validator: "Soda Core"
+    checks:
+      - "High >= Low"
+      - "Volume non-negative"
+      - "No gaps > 5s for any symbol"
+
+# ─── Lineage Graph (Mermaid) ─────────────────────────────────────────────────
+# Render with: https://mermaid.live
+lineage_diagram: |
+  graph LR
+    A[GBM Generator] -->|JSON| B[Kafka Producer]
+    B -->|LZ4 compressed| C[stock-ticks topic]
+    C -->|Batch 500| D[Kafka Consumer]
+    D -->|execute_values| E[(stock_ticks)]
+    E -->|REFRESH| F[ohlcv_1s View]
+    E -->|REFRESH| G[ohlcv_1m View]
+    E -->|UPSERT| H[stock_summary]
+
+    I{Contract Validator} -.->|validates| B
+    J{Soda Core} -.->|scans| E
+    J -.->|scans| F
+
+    K[Prometheus] -.->|scrapes| B
+    K -.->|scrapes| D
+    L[Grafana] -.->|queries| K
+    L -.->|queries| E

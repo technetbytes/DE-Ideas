@@ -1,0 +1,100 @@
+{
+  "type": "record",
+  "name": "StockTick",
+  "namespace": "com.stockstreaming.events",
+  "doc": "Stock tick event representing a single price update at millisecond granularity",
+  "fields": [
+    {
+      "name": "symbol",
+      "type": "string",
+      "doc": "Stock ticker symbol (e.g., MSFT, AAPL)"
+    },
+    {
+      "name": "timestamp",
+      "type": "string",
+      "doc": "ISO 8601 UTC timestamp of the tick"
+    },
+    {
+      "name": "timestamp_ms",
+      "type": "long",
+      "doc": "Unix timestamp in milliseconds"
+    },
+    {
+      "name": "sequence",
+      "type": "long",
+      "doc": "Monotonically increasing sequence number per producer instance"
+    },
+    {
+      "name": "price",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 12,
+        "scale": 4
+      },
+      "doc": "Current trade price"
+    },
+    {
+      "name": "bid",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 12,
+        "scale": 4
+      },
+      "doc": "Best bid price"
+    },
+    {
+      "name": "ask",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 12,
+        "scale": 4
+      },
+      "doc": "Best ask price"
+    },
+    {
+      "name": "spread",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 8,
+        "scale": 4
+      },
+      "doc": "Bid-ask spread"
+    },
+    {
+      "name": "volume",
+      "type": "int",
+      "doc": "Trade volume for this tick"
+    },
+    {
+      "name": "volume_24h",
+      "type": "long",
+      "doc": "Cumulative 24-hour volume"
+    },
+    {
+      "name": "change_pct",
+      "type": ["null", {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 8,
+        "scale": 4
+      }],
+      "default": null,
+      "doc": "Percentage change from base price"
+    },
+    {
+      "name": "volatility",
+      "type": ["null", {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 8,
+        "scale": 6
+      }],
+      "default": null,
+      "doc": "Current volatility parameter"
+    }
+  ]
+}

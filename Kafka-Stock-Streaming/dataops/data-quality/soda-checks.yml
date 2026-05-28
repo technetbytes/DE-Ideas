@@ -1,0 +1,106 @@
+# Soda Core Data Quality Checks
+# Run against PostgreSQL to validate data pipeline health
+# Schedule: Every 5 minutes during market hours
+
+checks for stock_ticks:
+  # ─── Freshness ─────────────────────────────────────────────────────
+  - freshness(timestamp) < 30s:
+      name: Data Freshness
+      warn: when < 10s
+      fail: when > 30s
+
+  # ─── Volume / Completeness ─────────────────────────────────────────
+  - row_count > 0:
+      name: Table Not Empty
+      filter: "timestamp > NOW() - INTERVAL '1 minute'"
+
+  - row_count between 500 and 100000:
+      name: Row Count Per Minute In Range
+      filter: "timestamp > NOW() - INTERVAL '1 minute'"
+
+  # ─── Null Checks (Required Fields) ────────────────────────────────
+  - missing_count(symbol) = 0:
+      name: Symbol Never Null
+
+  - missing_count(timestamp) = 0:
+      name: Timestamp Never Null
+
+  - missing_count(price) = 0:
+      name: Price Never Null
+
+  - missing_count(bid) = 0:
+      name: Bid Never Null
+
+  - missing_count(ask) = 0:
+      name: Ask Never Null
+
+  - missing_count(volume) = 0:
+      name: Volume Never Null
+
+  # ─── Value Range Checks ────────────────────────────────────────────
+  - min(price) > 0:
+      name: Price Positive
+      fail: when <= 0
+
+  - max(price) < 100000:
+      name: Price Under Max
+      fail: when >= 100000
+
+  - min(volume) >= 1:
+      name: Volume At Least 1
+
+  - min(spread) >= 0:
+      name: Spread Non-Negative
+
+  # ─── Bid/Ask Validity ──────────────────────────────────────────────
+  - failed_rows_percent(bid_ask_valid) < 0.1:
+      name: Bid Less Than Ask
+      fail_condition: "bid > ask"
+
+  # ─── Spread Sanity ────────────────────────────────────────────────
+  - avg(spread) < 5.0:
+      name: Average Spread Reasonable
+      filter: "timestamp > NOW() - INTERVAL '5 minutes'"
+
+  # ─── Symbol Coverage ───────────────────────────────────────────────
+  - distinct_count(symbol) >= 20:
+      name: Minimum Symbol Coverage
+      filter: "timestamp > NOW() - INTERVAL '1 minute'"
+      warn: when < 25
+      fail: when < 20
+
+  # ─── Duplicate Detection ───────────────────────────────────────────
+  - duplicate_count(symbol, timestamp_ms, sequence) = 0:
+      name: No Duplicate Ticks
+
+  # ─── Anomaly Detection ────────────────────────────────────────────
+  - anomaly detection for row_count:
+      name: Row Count Anomaly
+      warn: when anomaly score > 2
+      fail: when anomaly score > 3
+
+  # ─── Change Percentage Bounds ──────────────────────────────────────
+  - min(change_pct) > -50:
+      name: Change Pct Lower Bound
+      filter: "change_pct IS NOT NULL"
+
+  - max(change_pct) < 100:
+      name: Change Pct Upper Bound
+      filter: "change_pct IS NOT NULL"
+
+
+checks for stock_ohlcv_1m:
+  # ─── OHLCV Consistency ────────────────────────────────────────────
+  - row_count > 0:
+      name: OHLCV 1m Has Data
+
+  - failed_rows_percent(ohlcv_high_valid) = 0:
+      name: High >= Open, Close, Low
+      fail_condition: "high < open OR high < close OR high < low"
+
+  - failed_rows_percent(ohlcv_low_valid) = 0:
+      name: Low <= Open, Close, High
+      fail_condition: "low > open OR low > close OR low > high"
+
+  - min(volume) >= 0:
+      name: OHLCV Volume Non-Negative

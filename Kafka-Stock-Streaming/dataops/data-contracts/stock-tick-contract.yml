@@ -1,0 +1,203 @@
+# Data Contract: Stock Tick Events
+# Version: 1.0.0
+# Owner: Data Engineering Team
+# Last Updated: 2026-05-25
+
+apiVersion: datacontract/v1.0
+kind: DataContract
+metadata:
+  name: stock-tick-events
+  version: "1.0.0"
+  owner: data-engineering
+  contact: data-eng@company.com
+  description: |
+    Real-time stock market tick data generated at millisecond granularity.
+    Used by downstream analytics, alerting, and OHLCV aggregation pipelines.
+
+producer:
+  name: stock-producer
+  team: data-engineering
+  repository: kafka-stock-streaming/producer
+  contact: data-eng@company.com
+
+consumers:
+  - name: stock-consumer-postgres
+    team: data-engineering
+    purpose: "Write tick data to PostgreSQL for persistence and querying"
+  - name: ohlcv-aggregator
+    team: analytics
+    purpose: "Build OHLCV bars for dashboards"
+  - name: alerting-service
+    team: platform
+    purpose: "Trigger price movement alerts"
+
+schema:
+  format: json
+  topic: stock-ticks
+  key:
+    type: string
+    description: "Stock symbol used as partition key"
+  value:
+    fields:
+      - name: symbol
+        type: string
+        required: true
+        constraints:
+          pattern: "^[A-Z.]{1,10}$"
+          description: "Must be a valid uppercase ticker symbol"
+
+      - name: timestamp
+        type: string
+        required: true
+        constraints:
+          format: iso8601
+          description: "Must be a valid ISO 8601 timestamp with timezone"
+
+      - name: timestamp_ms
+        type: long
+        required: true
+        constraints:
+          min: 0
+          freshness: "< 5000ms from current time"
+          description: "Must be within 5 seconds of wall clock"
+
+      - name: sequence
+        type: long
+        required: true
+        constraints:
+          min: 1
+          monotonic: true
+          description: "Strictly increasing per producer instance"
+
+      - name: price
+        type: decimal
+        required: true
+        constraints:
+          min: 0.01
+          max: 100000.00
+          description: "Must be a positive price value"
+
+      - name: bid
+        type: decimal
+        required: true
+        constraints:
+          min: 0.01
+          rule: "bid <= price"
+          description: "Bid must be at or below trade price"
+
+      - name: ask
+        type: decimal
+        required: true
+        constraints:
+          min: 0.01
+          rule: "ask >= price"
+          description: "Ask must be at or above trade price"
+
+      - name: spread
+        type: decimal
+        required: true
+        constraints:
+          min: 0
+          rule: "spread == ask - bid"
+          max_pct_of_price: 1.0
+          description: "Spread must equal ask-bid, max 1% of price"
+
+      - name: volume
+        type: integer
+        required: true
+        constraints:
+          min: 1
+          max: 1000000
+          description: "Trade volume per tick"
+
+      - name: volume_24h
+        type: long
+        required: true
+        constraints:
+          min: 0
+          monotonic: true
+          description: "Cumulative; must not decrease within a session"
+
+      - name: change_pct
+        type: decimal
+        required: false
+        constraints:
+          min: -99.99
+          max: 999.99
+
+      - name: volatility
+        type: decimal
+        required: false
+        constraints:
+          min: 0
+          max: 1.0
+
+sla:
+  availability:
+    target: 99.9%
+    measurement_window: "30 days rolling"
+    description: "Producer must be available 99.9% of time during market hours"
+
+  freshness:
+    max_latency_ms: 100
+    measurement: "p99 end-to-end latency (produce to DB write)"
+    alerting_threshold_ms: 500
+    description: "99th percentile latency must stay under 100ms"
+
+  throughput:
+    min_messages_per_second: 500
+    expected_messages_per_second: 1000
+    max_messages_per_second: 50000
+    description: "Must sustain at least 500 msg/s during market hours"
+
+  completeness:
+    max_null_rate_pct: 0.1
+    required_fields_null_tolerance: 0
+    description: "Required fields must never be null; optional fields < 0.1% null"
+
+  data_loss:
+    max_acceptable_loss_pct: 0.01
+    dedup_strategy: "unique constraint on (symbol, timestamp_ms, sequence)"
+    description: "Max 0.01% message loss; duplicates handled at DB layer"
+
+quality_rules:
+  - name: price_sanity
+    description: "Price must not deviate more than 50% from base in any single session"
+    severity: critical
+    action: alert_and_quarantine
+
+  - name: timestamp_ordering
+    description: "Timestamps must be monotonically increasing per symbol partition"
+    severity: warning
+    action: alert
+
+  - name: spread_validity
+    description: "Spread must be positive and less than 1% of price"
+    severity: critical
+    action: reject
+
+  - name: volume_burst
+    description: "Volume spike > 10x average triggers investigation"
+    severity: warning
+    action: alert
+
+  - name: symbol_coverage
+    description: "All 25 configured symbols must produce at least 1 tick per second"
+    severity: critical
+    action: alert
+
+change_management:
+  breaking_changes:
+    process: "RFC -> Data contract PR -> Consumer team review -> Migration plan -> Deploy"
+    notice_period: "14 days minimum"
+    rollback_plan: "Required for all schema changes"
+
+  non_breaking_changes:
+    process: "PR -> Auto-merge after CI passes"
+    notice_period: "Informational Slack notification"
+
+  versioning:
+    strategy: "Semantic versioning (MAJOR.MINOR.PATCH)"
+    major: "Breaking schema or SLA changes"
+    minor: "New optional fields or relaxed constraints"
+    patch: "Documentation or metadata updates"

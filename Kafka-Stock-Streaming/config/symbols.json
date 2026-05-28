@@ -1,0 +1,35 @@
+{
+  "symbols": [
+    {"symbol": "MSFT", "name": "Microsoft Corp", "base_price": 420.50, "volatility": 0.015},
+    {"symbol": "AAPL", "name": "Apple Inc", "base_price": 195.80, "volatility": 0.012},
+    {"symbol": "NVDA", "name": "NVIDIA Corp", "base_price": 880.25, "volatility": 0.025},
+    {"symbol": "GOOGL", "name": "Alphabet Inc", "base_price": 175.40, "volatility": 0.014},
+    {"symbol": "AMZN", "name": "Amazon.com Inc", "base_price": 185.60, "volatility": 0.016},
+    {"symbol": "TSLA", "name": "Tesla Inc", "base_price": 245.30, "volatility": 0.035},
+    {"symbol": "META", "name": "Meta Platforms Inc", "base_price": 505.70, "volatility": 0.018},
+    {"symbol": "BRK.B", "name": "Berkshire Hathaway B", "base_price": 410.20, "volatility": 0.008},
+    {"symbol": "JPM", "name": "JPMorgan Chase", "base_price": 198.50, "volatility": 0.011},
+    {"symbol": "V", "name": "Visa Inc", "base_price": 280.90, "volatility": 0.009},
+    {"symbol": "JNJ", "name": "Johnson & Johnson", "base_price": 155.30, "volatility": 0.007},
+    {"symbol": "WMT", "name": "Walmart Inc", "base_price": 165.80, "volatility": 0.008},
+    {"symbol": "UNH", "name": "UnitedHealth Group", "base_price": 525.40, "volatility": 0.013},
+    {"symbol": "MA", "name": "Mastercard Inc", "base_price": 460.60, "volatility": 0.010},
+    {"symbol": "PG", "name": "Procter & Gamble", "base_price": 162.30, "volatility": 0.006},
+    {"symbol": "HD", "name": "Home Depot Inc", "base_price": 355.70, "volatility": 0.012},
+    {"symbol": "XOM", "name": "Exxon Mobil Corp", "base_price": 108.90, "volatility": 0.014},
+    {"symbol": "AVGO", "name": "Broadcom Inc", "base_price": 1350.80, "volatility": 0.022},
+    {"symbol": "LLY", "name": "Eli Lilly & Co", "base_price": 780.50, "volatility": 0.020},
+    {"symbol": "COST", "name": "Costco Wholesale", "base_price": 720.30, "volatility": 0.009},
+    {"symbol": "NFLX", "name": "Netflix Inc", "base_price": 620.40, "volatility": 0.019},
+    {"symbol": "AMD", "name": "Advanced Micro Devices", "base_price": 175.20, "volatility": 0.028},
+    {"symbol": "ADBE", "name": "Adobe Inc", "base_price": 580.60, "volatility": 0.017},
+    {"symbol": "CRM", "name": "Salesforce Inc", "base_price": 295.40, "volatility": 0.016},
+    {"symbol": "INTC", "name": "Intel Corp", "base_price": 42.80, "volatility": 0.022}
+  ],
+  "market_hours": {
+    "open": "09:30",
+    "close": "16:00",
+    "timezone": "America/New_York",
+    "simulate_after_hours": true
+  }
+}

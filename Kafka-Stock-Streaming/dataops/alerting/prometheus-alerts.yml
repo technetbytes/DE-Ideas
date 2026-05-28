@@ -1,0 +1,176 @@
+# Prometheus Alert Rules for Stock Streaming Pipeline
+# SLA-based alerting for DataOps
+
+groups:
+  # ─── Freshness SLA ─────────────────────────────────────────────────
+  - name: sla_freshness
+    rules:
+      - alert: SLA_DataStaleness_Warning
+        expr: time() - max(stock_producer_last_price) > 10
+        for: 30s
+        labels:
+          severity: warning
+          sla: freshness
+        annotations:
+          summary: "Data freshness degrading"
+          description: "No new ticks produced for {{ $value | humanizeDuration }}. SLA target: < 5s."
+
+      - alert: SLA_DataStaleness_Critical
+        expr: time() - max(stock_producer_last_price) > 30
+        for: 10s
+        labels:
+          severity: critical
+          sla: freshness
+        annotations:
+          summary: "CRITICAL: Data pipeline stale"
+          description: "No new ticks for {{ $value | humanizeDuration }}. Pipeline may be down."
+
+  # ─── Throughput SLA ────────────────────────────────────────────────
+  - name: sla_throughput
+    rules:
+      - alert: SLA_Throughput_Low
+        expr: stock_producer_messages_per_second < 500
+        for: 1m
+        labels:
+          severity: warning
+          sla: throughput
+        annotations:
+          summary: "Producer throughput below SLA"
+          description: "Current rate: {{ $value | printf \"%.0f\" }} msg/s. SLA minimum: 500 msg/s."
+
+      - alert: SLA_Throughput_Critical
+        expr: stock_producer_messages_per_second < 100
+        for: 30s
+        labels:
+          severity: critical
+          sla: throughput
+        annotations:
+          summary: "CRITICAL: Producer nearly stopped"
+          description: "Current rate: {{ $value | printf \"%.0f\" }} msg/s. Producer may be failing."
+
+  # ─── Latency SLA ──────────────────────────────────────────────────
+  - name: sla_latency
+    rules:
+      - alert: SLA_Latency_P99_High
+        expr: histogram_quantile(0.99, rate(stock_consumer_processing_latency_seconds_bucket[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          sla: latency
+        annotations:
+          summary: "End-to-end latency exceeding SLA"
+          description: "P99 latency: {{ $value | printf \"%.3f\" }}s. SLA target: < 100ms."
+
+      - alert: SLA_Latency_P99_Critical
+        expr: histogram_quantile(0.99, rate(stock_consumer_processing_latency_seconds_bucket[5m])) > 0.5
+        for: 1m
+        labels:
+          severity: critical
+          sla: latency
+        annotations:
+          summary: "CRITICAL: Latency SLA breach"
+          description: "P99 latency: {{ $value | printf \"%.3f\" }}s. Consumers may be overwhelmed."
+
+  # ─── Consumer Health ───────────────────────────────────────────────
+  - name: consumer_health
+    rules:
+      - alert: ConsumerLag_High
+        expr: kafka_consumergroup_lag > 10000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumer lag growing"
+          description: "Consumer lag: {{ $value }} messages behind. Partition: {{ $labels.partition }}."
+
+      - alert: ConsumerLag_Critical
+        expr: kafka_consumergroup_lag > 100000
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL: Consumer severely lagging"
+          description: "Consumer lag: {{ $value }} messages. Data loss risk."
+
+      - alert: Consumer_Down
+        expr: stock_consumer_active == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consumer service is down"
+          description: "Stock consumer is not running. Data is accumulating in Kafka."
+
+  # ─── Producer Health ───────────────────────────────────────────────
+  - name: producer_health
+    rules:
+      - alert: Producer_Down
+        expr: stock_producer_active == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Producer service is down"
+          description: "Stock producer is not running. No data being generated."
+
+      - alert: Producer_High_Error_Rate
+        expr: rate(stock_producer_messages_total{status="error"}[5m]) / rate(stock_producer_messages_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Producer error rate elevated"
+          description: "Error rate: {{ $value | printf \"%.2f\" }}%. Check Kafka connectivity."
+
+  # ─── Database Health ───────────────────────────────────────────────
+  - name: database_health
+    rules:
+      - alert: DB_BatchWrite_Slow
+        expr: histogram_quantile(0.95, rate(stock_consumer_batch_write_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database writes slowing down"
+          description: "P95 batch write time: {{ $value | printf \"%.2f\" }}s. Check PostgreSQL load."
+
+      - alert: DB_BatchWrite_Failing
+        expr: rate(stock_consumer_batches_total{status="error"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database batch writes failing"
+          description: "Batch write errors detected. Data may not be persisted."
+
+      - alert: DB_Connection_Down
+        expr: stock_consumer_db_pool_active == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection lost"
+          description: "Consumer has no active DB connection. All writes will fail."
+
+  # ─── Data Quality ─────────────────────────────────────────────────
+  - name: data_quality
+    rules:
+      - alert: DataQuality_ContractViolations
+        expr: rate(dataops_contract_violations_total{severity="critical"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          sla: quality
+        annotations:
+          summary: "Critical data contract violations"
+          description: "Contract violations detected for rule: {{ $labels.rule_name }}, symbol: {{ $labels.symbol }}."
+
+      - alert: DataQuality_Compliance_Low
+        expr: dataops_contract_compliance_percent < 99
+        for: 5m
+        labels:
+          severity: warning
+          sla: quality
+        annotations:
+          summary: "Data contract compliance dropping"
+          description: "Compliance: {{ $value | printf \"%.1f\" }}%. Target: 99%+."

@@ -1,0 +1,25 @@
+{
+  "description": "Schema Registry compatibility configuration for stock-ticks topic",
+  "subjects": {
+    "stock-ticks-value": {
+      "compatibilityLevel": "BACKWARD",
+      "description": "Backward compatible: new schema can read old data. Consumers never break on schema upgrades."
+    },
+    "stock-ticks-key": {
+      "compatibilityLevel": "FULL",
+      "description": "Full compatible: key schema changes must be both forward and backward compatible."
+    }
+  },
+  "rules": {
+    "allowed_changes": [
+      "Add optional field with default value",
+      "Add new enum value at end",
+      "Widen numeric type (int -> long)"
+    ],
+    "breaking_changes_require": [
+      "New topic version (stock-ticks-v2)",
+      "Consumer group migration plan",
+      "Data contract amendment approved by data owner"
+    ]
+  }
+}

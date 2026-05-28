@@ -1,0 +1,18 @@
+# Soda Core Configuration
+# Connects to PostgreSQL for data quality scanning
+
+data_source stockdata:
+  type: postgres
+  host: ${POSTGRES_HOST:-localhost}
+  port: ${POSTGRES_PORT:-5432}
+  username: ${POSTGRES_USER:-stockuser}
+  password: ${POSTGRES_PASSWORD:-stockpass123}
+  database: ${POSTGRES_DB:-stockdata}
+  schema: public
+
+soda_cloud:
+  # Optional: Connect to Soda Cloud for centralized quality dashboard
+  # host: cloud.soda.io
+  # api_key_id: ${SODA_CLOUD_API_KEY_ID}
+  # api_key_secret: ${SODA_CLOUD_API_KEY_SECRET}
+  pass: true
