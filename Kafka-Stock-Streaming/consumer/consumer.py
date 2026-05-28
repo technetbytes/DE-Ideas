@@ -167,7 +167,7 @@ class StockConsumer:
             "max.poll.interval.ms": 300000,
             "session.timeout.ms": 30000,
             "fetch.min.bytes": 1024,
-            "fetch.max.wait.ms": 100,
+            "fetch.wait.max.ms": 100,
         }
 
         self.consumer = Consumer(self.consumer_config)
