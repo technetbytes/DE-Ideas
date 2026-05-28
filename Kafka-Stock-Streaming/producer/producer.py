@@ -184,7 +184,7 @@ class StockProducer:
         tick = self.generator.generate_tick(symbol)
 
         # Serialize with orjson for speed
-        value = orjson.dumps(tick)
+        value = orjson.dumps(tick, option=orjson.OPT_SERIALIZE_NUMPY)
         key = symbol.encode("utf-8")
 
         start = time.perf_counter()
