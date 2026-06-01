@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:16
+    container_name: postgres_16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_secure_password
+      POSTGRES_DB: dvdrental  # The database name matching your .tar file
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mounts the local .tar file so Postgres automatically restores it on first boot
+      - ./dvdrental.tar:/docker-entrypoint-initdb.d/dvdrental.tar
+      # Persistent storage for your Postgres data
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - db_network
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:26.1.0
+    container_name: cloudbeaver_web
+    ports:
+      - "8978:8978"
+    volumes:
+      # Persistent storage for CloudBeaver workspace (connections, settings)
+      - cloudbeaver_workspace:/opt/cloudbeaver/workspace
+    depends_on:
+      - postgres_db
+    networks:
+      - db_network
+
+volumes:
+  postgres_data:
+  cloudbeaver_workspace:
+
+networks:
+  db_network:
+    driver: bridge
