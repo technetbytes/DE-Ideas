@@ -6,14 +6,16 @@ services:
     container_name: postgres_16
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_secure_password
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: dvdrental  # The database name matching your .tar file
     ports:
-      - "5432:5432"
+      - "5432:5432"    
     volumes:
-      # Mounts the local .tar file so Postgres automatically restores it on first boot
-      - ./dvdrental.tar:/docker-entrypoint-initdb.d/dvdrental.tar
-      # Persistent storage for your Postgres data
+      # 1. Map the .tar file into a safe temporary directory
+      - ./dvdrental.tar:/tmp/dvdrental.tar
+      # 2. Map our custom initialization script (created in Step 2)
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      # 3. Persistent database data
       - postgres_data:/var/lib/postgresql/data
     networks:
       - db_network
