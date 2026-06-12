@@ -1,0 +1,6 @@
+services:
+  dbt:
+    build: .
+    volumes:
+      - ./target:/dbt/target
+      - ./logs:/dbt/logs

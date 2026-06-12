@@ -1,0 +1,6 @@
+hello_world:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: /dbt/target/hello_world.duckdb
